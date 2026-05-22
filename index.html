@@ -243,17 +243,32 @@ textarea:focus{border-color:var(--ink);}
     <div class="sp"     id="sp1"></div>
     <div class="sp"     id="sp2"></div>
     <div class="sp"     id="sp3"></div>
+    <div class="sp"     id="sp4"></div>
   </div>
 
-  <!-- step 0: room -->
+  <!-- step 0: name -->
   <div class="pg on" id="bpg0">
-    <div class="pg-label">Шаг 1 — Комната</div>
+    <div class="pg-label">Шаг 1 — Ваше имя</div>
+    <div class="err" id="nErr"></div>
+    <div class="tf" style="margin-bottom:10px;">
+      <label>Имя и фамилия</label>
+      <input type="text" id="userName" placeholder="Например: Азиза Каримова"
+        style="width:100%;border:2px solid var(--border);border-radius:4px;padding:14px 16px;font-size:17px;font-weight:700;background:var(--card);color:var(--ink);outline:none;font-family:inherit;transition:border-color .15s;"
+        oninput="document.getElementById('btnNext').disabled=!this.value.trim()"
+        onfocus="this.style.borderColor='var(--ink)'" onblur="this.style.borderColor='var(--border)'"/>
+    </div>
+    <div class="hint">Это имя будет видно в расписании</div>
+  </div>
+
+  <!-- step 1: room -->
+  <div class="pg" id="bpg1">
+    <div class="pg-label">Шаг 2 — Комната</div>
     <div id="roomList"></div>
   </div>
 
-  <!-- step 1: date -->
-  <div class="pg" id="bpg1">
-    <div class="pg-label">Шаг 2 — Дата</div>
+  <!-- step 2: date -->
+  <div class="pg" id="bpg2">
+    <div class="pg-label">Шаг 3 — Дата</div>
     <div class="month-nav">
       <button onclick="chMon(-1)">‹</button>
       <div class="month-title" id="monTitle"></div>
@@ -262,9 +277,9 @@ textarea:focus{border-color:var(--ink);}
     <div class="cal" id="calGrid"></div>
   </div>
 
-  <!-- step 2: time -->
-  <div class="pg" id="bpg2">
-    <div class="pg-label">Шаг 3 — Время</div>
+  <!-- step 3: time -->
+  <div class="pg" id="bpg3">
+    <div class="pg-label">Шаг 4 — Время</div>
     <div class="err" id="tErr"></div>
     <div class="time-row">
       <div class="tf"><label>Начало</label><input type="time" id="tS" min="09:00" max="20:00" value="09:00"/></div>
@@ -275,11 +290,12 @@ textarea:focus{border-color:var(--ink);}
     <div class="hint">Будет видно в расписании</div>
   </div>
 
-  <!-- step 3: confirm -->
-  <div class="pg" id="bpg3">
-    <div class="pg-label">Шаг 4 — Подтверждение</div>
+  <!-- step 4: confirm -->
+  <div class="pg" id="bpg4">
+    <div class="pg-label">Шаг 5 — Подтверждение</div>
     <div class="sum-card">
       <div class="sum-hd">Детали бронирования</div>
+      <div class="sum-row"><div class="sum-ico">👤</div><div><div class="sum-lbl">Имя</div><div class="sum-val" id="sName">—</div></div></div>
       <div class="sum-row"><div class="sum-ico">🏠</div><div><div class="sum-lbl">Комната</div><div class="sum-val" id="sRoom">—</div></div></div>
       <div class="sum-row"><div class="sum-ico">📅</div><div><div class="sum-lbl">Дата</div><div class="sum-val" id="sDate">—</div></div></div>
       <div class="sum-row"><div class="sum-ico">⏰</div><div><div class="sum-lbl">Время</div><div class="sum-val" id="sTime">—</div></div></div>
@@ -304,7 +320,7 @@ const API = 'https://velox.biz/api/bookings';
 const ROOMS = [
   {id:3,name:'Комната 3',type:'Большая аудитория'},
   {id:5,name:'Комната 5',type:'Средняя'},
-  {id:1,name:'Комната 1',type:'Средняя'},
+  {id:1,name:'Комната 1',type:'Индивидуальная'},
   {id:2,name:'Комната 2',type:'Индивидуальная'},
   {id:4,name:'Комната 4',type:'Индивидуальная'},
 ];
@@ -466,56 +482,69 @@ function chMon(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}
 // ── STEP NAV ──────────────────────────────────────────────────
 function showBStep(s){
   document.querySelectorAll('.pg').forEach((p,i)=>p.classList.toggle('on',i===s));
-  ['sp0','sp1','sp2','sp3'].forEach((id,i)=>{
+  ['sp0','sp1','sp2','sp3','sp4'].forEach((id,i)=>{
     const el=document.getElementById(id);
     el.classList.remove('on','done');
     if(i<s)el.classList.add('done');else if(i===s)el.classList.add('on');
   });
   document.getElementById('btnBack').style.display=s>0?'':'none';
-  document.getElementById('btnNext').textContent=s===3?'✓ Подтвердить':'Далее →';
+  document.getElementById('btnNext').textContent=s===4?'✓ Подтвердить':'Далее →';
 }
 
 async function nx(){
-  const err=document.getElementById('tErr');
-  err.classList.remove('on');
+  const tErr=document.getElementById('tErr');
+  tErr.classList.remove('on');
+
   if(bStep===0){
+    const name=document.getElementById('userName').value.trim();
+    const nErr=document.getElementById('nErr');
+    if(!name){nErr.textContent='Введите ваше имя.';nErr.classList.add('on');return;}
+    nErr.classList.remove('on');
+    bStep=1;showBStep(1);
+    document.getElementById('btnNext').disabled=true;
+    return;
+  }
+  if(bStep===1){
     if(!selRoom)return;
     selDate=selDate||dateStr(now);
     renderCal();
-    bStep=1;showBStep(1);return;
-  }
-  if(bStep===1){
-    if(!selDate)return;
-    bookings=await fetchBookings(selDate);
     bStep=2;showBStep(2);return;
   }
   if(bStep===2){
+    if(!selDate)return;
+    bookings=await fetchBookings(selDate);
+    bStep=3;showBStep(3);return;
+  }
+  if(bStep===3){
     const s=document.getElementById('tS').value;
     const e=document.getElementById('tE').value;
-    if(!s||!e){err.textContent='Укажите время.';err.classList.add('on');return;}
-    if(e<=s){err.textContent='Время окончания должно быть позже начала.';err.classList.add('on');return;}
+    if(!s||!e){tErr.textContent='Укажите время.';tErr.classList.add('on');return;}
+    if(e<=s){tErr.textContent='Время окончания должно быть позже начала.';tErr.classList.add('on');return;}
     const conflict=bookings.find(b=>b.room===selRoom&&!(e<=b.start||s>=b.end));
-    if(conflict){err.textContent=`Занято: ${conflict.name}, ${conflict.start}–${conflict.end}`;err.classList.add('on');return;}
+    if(conflict){tErr.textContent=`Занято: ${conflict.name}, ${conflict.start}–${conflict.end}`;tErr.classList.add('on');return;}
     const rDef=ROOMS.find(r=>r.id===selRoom);
+    const name=document.getElementById('userName').value.trim();
+    document.getElementById('sName').textContent=name;
     document.getElementById('sRoom').textContent=rDef?`${rDef.name} (${rDef.type})`:selRoom;
     document.getElementById('sDate').textContent=fmtDate(selDate);
     document.getElementById('sTime').textContent=`${s} – ${e}`;
     const pur=document.getElementById('purpose').value.trim();
     if(pur){document.getElementById('sPurp').textContent=pur;document.getElementById('sPR').style.display='';}
     else{document.getElementById('sPR').style.display='none';}
-    bStep=3;showBStep(3);return;
+    bStep=4;showBStep(4);return;
   }
-  if(bStep===3){
+  if(bStep===4){
     tg.sendData(JSON.stringify({
       room:selRoom,date:selDate,
       start_time:document.getElementById('tS').value,
       end_time:document.getElementById('tE').value,
-      purpose:document.getElementById('purpose').value.trim()
+      purpose:document.getElementById('purpose').value.trim(),
+      custom_name:document.getElementById('userName').value.trim()
     }));
   }
 }
 
-function bk(){if(bStep>0){bStep--;showBStep(bStep);}}
+function bk(){if(bStep>0){bStep--;showBStep(bStep);if(bStep===1)document.getElementById('btnNext').disabled=!selRoom;}}
 
 // ── INIT ──────────────────────────────────────────────────────
 document.getElementById('btnNext').disabled=true;
