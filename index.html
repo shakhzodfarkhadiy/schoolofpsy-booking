@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>School of PSY — Бронирование</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#EDECEA;
+  --ink:#1A1A1A;
+  --ink2:#666;
+  --card:#fff;
+  --border:#D8D5D2;
+  --ok:#27AE60;
+  --danger:#C0392B;
+  --warn:#E67E22;
+}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:15px;min-height:100vh;
+}
+
+/* HEADER */
+.hd{
+  padding:16px 18px 12px;border-bottom:2px solid var(--ink);
+  display:flex;align-items:center;gap:14px;
+  position:sticky;top:0;background:var(--bg);z-index:10;
+}
+.logo-block{display:flex;align-items:stretch;}
+.logo-school{
+  background:var(--ink);color:#fff;
+  font-size:8px;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;
+  writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);
+  padding:5px 4px;line-height:1;
+}
+.logo-sep{width:2px;background:var(--ink);}
+.logo-of{font-size:10px;font-weight:700;font-style:italic;padding:3px 3px;align-self:flex-start;}
+.logo-psy{font-size:24px;font-weight:900;letter-spacing:-0.02em;line-height:1;padding:1px 0;}
+.hd-sub{font-size:11px;color:var(--ink2);letter-spacing:0.05em;text-transform:uppercase;margin-top:2px;}
+
+/* TABS */
+.tabs{
+  display:flex;border-bottom:2px solid var(--ink);
+  position:sticky;top:71px;background:var(--bg);z-index:9;
+}
+.tab{
+  flex:1;padding:13px;text-align:center;font-size:13px;font-weight:700;
+  letter-spacing:0.03em;cursor:pointer;border-bottom:3px solid transparent;
+  margin-bottom:-2px;transition:all .15s;color:var(--ink2);
+}
+.tab.on{color:var(--ink);border-bottom-color:var(--ink);}
+
+/* CONTENT */
+.pane{display:none;padding:16px;padding-bottom:30px;}
+.pane.on{display:block;}
+
+/* DATE NAV */
+.date-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;
+}
+.date-nav button{
+  background:none;border:2px solid var(--border);border-radius:4px;
+  width:36px;height:36px;font-size:18px;cursor:pointer;color:var(--ink);
+}
+.date-nav button:hover{background:var(--border);}
+.date-title{font-size:16px;font-weight:800;}
+
+/* SCHEDULE */
+.room-block{
+  border:2px solid var(--border);border-radius:4px;
+  margin-bottom:12px;overflow:hidden;background:var(--card);
+}
+.room-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border-bottom:1px solid var(--border);
+  background:var(--card);
+}
+.room-head-name{font-weight:800;font-size:14px;}
+.room-head-type{font-size:11px;color:var(--ink2);margin-top:1px;}
+.room-badge{
+  font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;
+}
+.badge-free{background:rgba(39,174,96,.12);color:var(--ok);}
+.badge-busy{background:rgba(192,57,43,.12);color:var(--danger);}
+
+.slot-list{padding:10px 14px;}
+.slot{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;
+}
+.slot:last-child{border-bottom:none;}
+.slot-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot-busy{background:var(--danger);}
+.dot-free{background:var(--ok);}
+.dot-part{background:var(--warn);}
+.slot-time{font-weight:700;min-width:90px;}
+.slot-who{color:var(--ink2);font-size:12px;}
+.no-bookings{
+  padding:12px 14px;font-size:13px;color:var(--ok);font-weight:600;
+}
+
+/* BOOKING STEPS */
+.step-prog{display:flex;gap:5px;margin-bottom:16px;}
+.sp{flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .3s;}
+.sp.on{background:var(--ink);}
+.sp.done{background:var(--ok);}
+.pg{display:none;}
+.pg.on{display:block;}
+.pg-label{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink2);margin-bottom:14px;}
+
+/* ROOM CARDS */
+.room-card{
+  border:2px solid var(--border);border-radius:4px;padding:13px 15px;
+  margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px;
+  background:var(--card);transition:border-color .15s,background .15s;
+}
+.room-card.sel{border-color:var(--ink);background:var(--ink);}
+.room-card.sel .rn,.room-card.sel .rt,.room-card.sel .rs,.room-card.sel .rnum{color:#fff!important;}
+.room-card.sel .rcheck{background:#fff;color:var(--ink);}
+.rnum{font-size:26px;font-weight:900;line-height:1;min-width:32px;}
+.rn{font-weight:700;font-size:14px;}
+.rt{font-size:11px;color:var(--ink2);margin-top:1px;}
+.rs{font-size:11px;font-weight:700;margin-top:3px;}
+.rs.free{color:var(--ok);}
+.rs.busy{color:var(--danger);}
+.rcheck{
+  width:20px;height:20px;border:2px solid var(--border);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;
+  flex-shrink:0;transition:all .15s;margin-left:auto;
+}
+
+/* CAL */
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.month-nav button{
+  background:none;border:2px solid var(--border);border-radius:4px;
+  width:34px;height:34px;font-size:17px;cursor:pointer;color:var(--ink);
+}
+.month-title{font-size:15px;font-weight:800;}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cl{text-align:center;font-size:10px;font-weight:700;color:var(--ink2);letter-spacing:0.05em;padding:3px 0;}
+.cd{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  border-radius:4px;font-size:13px;cursor:pointer;transition:background .12s;
+}
+.cd:hover:not(.empty):not(.past){background:var(--border);}
+.cd.empty,.cd.past{opacity:.25;pointer-events:none;}
+.cd.today{font-weight:800;border:2px solid var(--ink);}
+.cd.sel{background:var(--ink);color:#fff;font-weight:700;}
+
+/* TIME */
+.time-row{display:flex;gap:10px;margin-bottom:14px;}
+.tf{flex:1;}
+.tf label{display:block;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink2);margin-bottom:6px;}
+.tf input{
+  width:100%;border:2px solid var(--border);border-radius:4px;
+  padding:13px 8px;font-size:22px;font-weight:900;text-align:center;
+  background:var(--card);color:var(--ink);outline:none;font-family:inherit;
+  transition:border-color .15s;
+}
+.tf input:focus{border-color:var(--ink);}
+textarea{
+  width:100%;border:2px solid var(--border);border-radius:4px;
+  padding:13px 15px;font-size:14px;background:var(--card);color:var(--ink);
+  outline:none;resize:none;min-height:75px;font-family:inherit;transition:border-color .15s;
+}
+textarea:focus{border-color:var(--ink);}
+.hint{font-size:12px;color:var(--ink2);margin-top:5px;}
+
+/* SUMMARY */
+.sum-card{border:2px solid var(--ink);border-radius:4px;background:var(--card);margin-bottom:14px;overflow:hidden;}
+.sum-hd{background:var(--ink);color:#fff;padding:11px 15px;font-weight:800;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;}
+.sum-row{display:flex;align-items:center;gap:11px;padding:11px 15px;border-bottom:1px solid var(--border);}
+.sum-row:last-child{border-bottom:none;}
+.sum-ico{font-size:17px;flex-shrink:0;width:22px;text-align:center;}
+.sum-lbl{font-size:10px;color:var(--ink2);margin-bottom:2px;text-transform:uppercase;letter-spacing:0.05em;}
+.sum-val{font-weight:700;font-size:14px;}
+
+/* ERROR */
+.err{
+  background:rgba(192,57,43,.1);color:var(--danger);border:1px solid rgba(192,57,43,.3);
+  border-radius:4px;padding:11px 13px;font-size:13px;margin-bottom:12px;display:none;
+}
+.err.on{display:block;}
+
+/* BOTTOM */
+.bar{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:10px 14px;background:var(--bg);border-top:2px solid var(--ink);
+  display:flex;gap:8px;
+}
+.btn{
+  flex:1;padding:14px;border:none;border-radius:4px;
+  font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;
+  transition:opacity .15s,transform .1s;letter-spacing:0.02em;
+}
+.btn:active{transform:scale(.97);}
+.btn-p{background:var(--ink);color:#fff;}
+.btn-s{background:none;border:2px solid var(--ink);color:var(--ink);flex:0 0 auto;padding:14px 18px;}
+.btn:disabled{opacity:.3;pointer-events:none;}
+.book-pad{padding-bottom:90px;}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div class="logo-block">
+    <div class="logo-school">SCHOOL</div>
+    <div class="logo-sep"></div>
+    <div><span class="logo-of">of</span><div class="logo-psy">PSY</div></div>
+  </div>
+  <div>
+    <div style="font-weight:800;font-size:15px;">Бронирование комнат</div>
+    <div class="hd-sub">9:00 – 20:00</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab on" id="tab0" onclick="switchTab(0)">📅 Расписание</div>
+  <div class="tab"    id="tab1" onclick="switchTab(1)">➕ Забронировать</div>
+</div>
+
+<!-- TAB 0: SCHEDULE -->
+<div class="pane on" id="pane0">
+  <div class="date-nav">
+    <button onclick="schedDay(-1)">‹</button>
+    <div class="date-title" id="schedTitle"></div>
+    <button onclick="schedDay(1)">›</button>
+  </div>
+  <div id="schedContent">
+    <div style="text-align:center;padding:30px;color:var(--ink2)">Загрузка...</div>
+  </div>
+</div>
+
+<!-- TAB 1: BOOKING -->
+<div class="pane book-pad" id="pane1">
+  <div class="step-prog">
+    <div class="sp on"  id="sp0"></div>
+    <div class="sp"     id="sp1"></div>
+    <div class="sp"     id="sp2"></div>
+    <div class="sp"     id="sp3"></div>
+  </div>
+
+  <!-- step 0: room -->
+  <div class="pg on" id="bpg0">
+    <div class="pg-label">Шаг 1 — Комната</div>
+    <div id="roomList"></div>
+  </div>
+
+  <!-- step 1: date -->
+  <div class="pg" id="bpg1">
+    <div class="pg-label">Шаг 2 — Дата</div>
+    <div class="month-nav">
+      <button onclick="chMon(-1)">‹</button>
+      <div class="month-title" id="monTitle"></div>
+      <button onclick="chMon(1)">›</button>
+    </div>
+    <div class="cal" id="calGrid"></div>
+  </div>
+
+  <!-- step 2: time -->
+  <div class="pg" id="bpg2">
+    <div class="pg-label">Шаг 3 — Время</div>
+    <div class="err" id="tErr"></div>
+    <div class="time-row">
+      <div class="tf"><label>Начало</label><input type="time" id="tS" min="09:00" max="20:00" value="09:00"/></div>
+      <div class="tf"><label>Конец</label><input type="time"   id="tE" min="09:00" max="20:00" value="10:00"/></div>
+    </div>
+    <div class="pg-label" style="margin-top:14px;">Цель (необязательно)</div>
+    <textarea id="purpose" placeholder="Индивидуальная сессия, группа..."></textarea>
+    <div class="hint">Будет видно в расписании</div>
+  </div>
+
+  <!-- step 3: confirm -->
+  <div class="pg" id="bpg3">
+    <div class="pg-label">Шаг 4 — Подтверждение</div>
+    <div class="sum-card">
+      <div class="sum-hd">Детали бронирования</div>
+      <div class="sum-row"><div class="sum-ico">🏠</div><div><div class="sum-lbl">Комната</div><div class="sum-val" id="sRoom">—</div></div></div>
+      <div class="sum-row"><div class="sum-ico">📅</div><div><div class="sum-lbl">Дата</div><div class="sum-val" id="sDate">—</div></div></div>
+      <div class="sum-row"><div class="sum-ico">⏰</div><div><div class="sum-lbl">Время</div><div class="sum-val" id="sTime">—</div></div></div>
+      <div class="sum-row" id="sPR" style="display:none"><div class="sum-ico">📝</div><div><div class="sum-lbl">Цель</div><div class="sum-val" id="sPurp">—</div></div></div>
+    </div>
+    <div class="hint" style="font-size:13px;">После подтверждения бронь появится в группе.</div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR (only for booking tab) -->
+<div class="bar" id="bar" style="display:none">
+  <button class="btn btn-s" id="btnBack" onclick="bk()" style="display:none">←</button>
+  <button class="btn btn-p" id="btnNext" onclick="nx()">Далее →</button>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand(); tg.ready();
+
+const API = 'https://velox.biz/api/bookings';
+
+const ROOMS = [
+  {id:3,name:'Комната 3',type:'Большая аудитория'},
+  {id:5,name:'Комната 5',type:'Средняя'},
+  {id:1,name:'Комната 1',type:'Индивидуальная'},
+  {id:2,name:'Комната 2',type:'Индивидуальная'},
+  {id:4,name:'Комната 4',type:'Индивидуальная'},
+];
+const DAYS   = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MONTHS_SHORT = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+
+const now = new Date();
+let schedDate = new Date();
+let bookings  = [];
+let selRoom   = null;
+let selDate   = null;
+let calY      = now.getFullYear();
+let calM      = now.getMonth();
+let bStep     = 0;
+
+// ── API ──────────────────────────────────────────────────────
+async function fetchBookings(date) {
+  try {
+    const r = await fetch(`${API}?date=${date}`);
+    return await r.json();
+  } catch(e) { return []; }
+}
+
+function dateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDate(s) {
+  const [y,m,d] = s.split('-');
+  const dn = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  const dt = new Date(y,m-1,d);
+  return `${d} ${MONTHS_SHORT[dt.getMonth()]} — ${dn[dt.getDay()]}`;
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function switchTab(i) {
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('on',j===i));
+  document.querySelectorAll('.pane').forEach((p,j)=>p.classList.toggle('on',j===i));
+  document.getElementById('bar').style.display = i===1 ? 'flex' : 'none';
+  if(i===0) renderSched();
+  if(i===1) renderRooms();
+}
+
+// ── SCHEDULE TAB ──────────────────────────────────────────────
+async function renderSched() {
+  const ds = dateStr(schedDate);
+  const isToday = ds === dateStr(now);
+  document.getElementById('schedTitle').textContent = isToday ? `Сегодня, ${fmtDate(ds)}` : fmtDate(ds);
+
+  const sc = document.getElementById('schedContent');
+  sc.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink2)">Загрузка...</div>';
+
+  const data = await fetchBookings(ds);
+  sc.innerHTML = '';
+
+  const curTime = isToday ? `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}` : '00:00';
+
+  ROOMS.forEach(r => {
+    const rBookings = data.filter(b => b.room === r.id).sort((a,b)=>a.start>b.start?1:-1);
+    const isNowBusy = rBookings.some(b => isToday && b.start <= curTime && b.end > curTime);
+
+    let html = `<div class="room-block">
+      <div class="room-head">
+        <div>
+          <div class="room-head-name">${r.name}</div>
+          <div class="room-head-type">${r.type}</div>
+        </div>
+        <div class="room-badge ${isNowBusy?'badge-busy':'badge-free'}">
+          ${isNowBusy ? '● Занята сейчас' : '● Свободна'}
+        </div>
+      </div>
+      <div class="slot-list">`;
+
+    if(rBookings.length === 0) {
+      html += `<div class="no-bookings">✓ Весь день свободна</div>`;
+    } else {
+      // Show free slots between bookings
+      let prev = '09:00';
+      rBookings.forEach(b => {
+        if(b.start > prev) {
+          html += `<div class="slot">
+            <div class="slot-dot dot-free"></div>
+            <div class="slot-time">${prev} – ${b.start}</div>
+            <div class="slot-who">Свободно</div>
+          </div>`;
+        }
+        const isCur = isToday && b.start <= curTime && b.end > curTime;
+        html += `<div class="slot" style="${isCur?'background:rgba(192,57,43,.05);margin:0 -14px;padding:8px 14px;':''}">
+          <div class="slot-dot dot-busy"></div>
+          <div class="slot-time">${b.start} – ${b.end}</div>
+          <div class="slot-who">${b.name}${b.purpose?' · '+b.purpose:''}</div>
+        </div>`;
+        prev = b.end;
+      });
+      if(prev < '20:00') {
+        html += `<div class="slot">
+          <div class="slot-dot dot-free"></div>
+          <div class="slot-time">${prev} – 20:00</div>
+          <div class="slot-who">Свободно</div>
+        </div>`;
+      }
+    }
+    html += '</div></div>';
+    sc.innerHTML += html;
+  });
+}
+
+function schedDay(d) {
+  schedDate.setDate(schedDate.getDate() + d);
+  renderSched();
+}
+
+// ── BOOKING TAB ───────────────────────────────────────────────
+async function renderRooms() {
+  const ds = selDate || dateStr(now);
+  bookings = await fetchBookings(ds);
+  const list = document.getElementById('roomList');
+  list.innerHTML = '';
+  const cur = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  ROOMS.forEach(r => {
+    const busy = bookings.some(b => b.room===r.id && b.start<=cur && b.end>cur);
+    const el = document.createElement('div');
+    el.className = 'room-card' + (selRoom===r.id?' sel':'');
+    el.innerHTML = `
+      <div class="rnum">${r.id}</div>
+      <div style="flex:1">
+        <div class="rn">${r.name}</div>
+        <div class="rt">${r.type}</div>
+        <div class="rs ${busy?'busy':'free'}">${busy?'● Занята сейчас':'● Свободна'}</div>
+      </div>
+      <div class="rcheck">${selRoom===r.id?'✓':''}</div>`;
+    el.onclick = () => { selRoom = r.id; renderRooms(); document.getElementById('btnNext').disabled=false; };
+    list.appendChild(el);
+  });
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────
+function renderCal() {
+  document.getElementById('monTitle').textContent = `${MONTHS[calM]} ${calY}`;
+  const g = document.getElementById('calGrid');
+  g.innerHTML = DAYS.map(d=>`<div class="cl">${d}</div>`).join('');
+  const first = new Date(calY,calM,1);
+  let dow = first.getDay(); if(dow===0) dow=7;
+  for(let i=1;i<dow;i++) g.innerHTML+=`<div class="cd empty"></div>`;
+  const days = new Date(calY,calM+1,0).getDate();
+  const tod  = dateStr(now);
+  for(let d=1;d<=days;d++){
+    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const el=document.createElement('div');
+    el.className='cd'+(ds<tod?' past':'')+(ds===tod?' today':'')+(ds===selDate?' sel':'');
+    el.textContent=d;
+    el.onclick=()=>{selDate=ds;renderCal();};
+    g.appendChild(el);
+  }
+}
+function chMon(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
+
+// ── STEP NAV ──────────────────────────────────────────────────
+function showBStep(s){
+  document.querySelectorAll('.pg').forEach((p,i)=>p.classList.toggle('on',i===s));
+  ['sp0','sp1','sp2','sp3'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.classList.remove('on','done');
+    if(i<s)el.classList.add('done');else if(i===s)el.classList.add('on');
+  });
+  document.getElementById('btnBack').style.display=s>0?'':'none';
+  document.getElementById('btnNext').textContent=s===3?'✓ Подтвердить':'Далее →';
+}
+
+async function nx(){
+  const err=document.getElementById('tErr');
+  err.classList.remove('on');
+  if(bStep===0){
+    if(!selRoom)return;
+    selDate=selDate||dateStr(now);
+    renderCal();
+    bStep=1;showBStep(1);return;
+  }
+  if(bStep===1){
+    if(!selDate)return;
+    bookings=await fetchBookings(selDate);
+    bStep=2;showBStep(2);return;
+  }
+  if(bStep===2){
+    const s=document.getElementById('tS').value;
+    const e=document.getElementById('tE').value;
+    if(!s||!e){err.textContent='Укажите время.';err.classList.add('on');return;}
+    if(e<=s){err.textContent='Время окончания должно быть позже начала.';err.classList.add('on');return;}
+    const conflict=bookings.find(b=>b.room===selRoom&&!(e<=b.start||s>=b.end));
+    if(conflict){err.textContent=`Занято: ${conflict.name}, ${conflict.start}–${conflict.end}`;err.classList.add('on');return;}
+    const rDef=ROOMS.find(r=>r.id===selRoom);
+    document.getElementById('sRoom').textContent=rDef?`${rDef.name} (${rDef.type})`:selRoom;
+    document.getElementById('sDate').textContent=fmtDate(selDate);
+    document.getElementById('sTime').textContent=`${s} – ${e}`;
+    const pur=document.getElementById('purpose').value.trim();
+    if(pur){document.getElementById('sPurp').textContent=pur;document.getElementById('sPR').style.display='';}
+    else{document.getElementById('sPR').style.display='none';}
+    bStep=3;showBStep(3);return;
+  }
+  if(bStep===3){
+    tg.sendData(JSON.stringify({
+      room:selRoom,date:selDate,
+      start_time:document.getElementById('tS').value,
+      end_time:document.getElementById('tE').value,
+      purpose:document.getElementById('purpose').value.trim()
+    }));
+  }
+}
+
+function bk(){if(bStep>0){bStep--;showBStep(bStep);}}
+
+// ── INIT ──────────────────────────────────────────────────────
+document.getElementById('btnNext').disabled=true;
+renderSched();
+</script>
+</body>
+</html>
